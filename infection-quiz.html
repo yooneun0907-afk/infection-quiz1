@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>감염예방 탐정단</title>
+<style>
+:root{--bg:#eef6f3;--card:#fff;--ink:#17332d;--sub:#4f6b64;--line:#cfe0da;--accent:#0f8b7a;--ok:#1b7f4b;--okbg:#dff3e6;--no:#b3392f;--nobg:#fbe4e1;--gold:#e8a317;--hero:#12312b;--herotx:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1f1c;--card:#172b27;--ink:#e6f2ee;--sub:#9db8b0;--line:#2b4741;--accent:#3fc7b2;--ok:#7be0a6;--okbg:#17382a;--no:#ff9a8f;--nobg:#3d1f1c;--gold:#f2c14e;--hero:#0a1614}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.6;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.7rem;margin:6px 0;letter-spacing:-.02em}
+h2{font-size:1.1rem;margin:0 0 14px;line-height:1.55}
+p{margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.hero{background:var(--hero);color:var(--herotx);border-radius:14px;padding:22px 20px;margin-bottom:14px}
+.hero p{opacity:.85}
+.sub{color:var(--sub)}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:13px 20px;font-weight:700;width:100%;margin-top:8px}
+.btn:focus-visible,.opt:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700;font-size:.92rem;gap:8px;flex-wrap:wrap}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+.combo{color:var(--gold);border-color:var(--gold)}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+#tm{background:var(--gold);width:100%}
+.case{font-size:.85rem;color:var(--accent);font-weight:700;margin-bottom:6px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.ok{background:var(--okbg);border-color:var(--ok)}
+.opt.no{background:var(--nobg);border-color:var(--no)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.exp{margin-top:14px;padding:14px;border-radius:10px;border-left:5px solid var(--accent);background:var(--bg)}
+.exp b.r{display:block;margin-bottom:4px}
+.exp.good b.r{color:var(--ok)}.exp.bad b.r{color:var(--no)}
+.tip{margin-top:10px;font-size:.92rem;color:var(--sub)}
+.score{font-size:3rem;font-weight:800;color:var(--accent);margin:2px 0}
+.hide{display:none}
+ul{padding-left:20px;margin:0 0 12px}
+.rev{border-top:1px solid var(--line);padding:10px 0;font-size:.92rem}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .35s}@keyframes pop{50%{transform:scale(1.06)}}}
+</style>
+</head>
+<body>
+<main>
+<section id="start">
+<div class="hero">
+<h1>🔍 감염예방 탐정단</h1>
+<p>우리 집, 주방, 화장실, 학교에 숨어 있는 감염 위험을 찾아라. 일상에서 알아두면 바로 써먹는 12가지 상식이에요.</p>
+</div>
+<div class="card">
+<ul>
+<li>문제당 제한시간 20초, 빨리 맞힐수록 높은 점수</li>
+<li>연속 정답이면 콤보 보너스</li>
+<li>답을 고르면 해설과 오늘부터 실천할 '탐정 메모'가 열려요</li>
+</ul>
+<button class="btn" id="go">수사 시작</button>
+</div>
+</section>
+
+<section id="play" class="hide">
+<div class="top"><span class="chip" id="no"></span><span class="chip combo hide" id="cb"></span><span class="chip" id="sc"></span></div>
+<div class="bar"><i id="pg"></i></div>
+<div class="bar"><i id="tm"></i></div>
+<div class="card">
+<div class="case" id="cs"></div>
+<h2 id="q"></h2>
+<div id="opts"></div>
+<div id="exp" class="exp hide"></div>
+<button class="btn hide" id="next">다음 사건</button>
+</div>
+</section>
+
+<section id="end" class="hide">
+<div class="hero">
+<p style="margin:0">최종 점수</p>
+<div class="score" id="fs" style="color:var(--gold)"></div>
+<h1 id="rank"></h1>
+<p id="sum"></p>
+</div>
+<div class="card">
+<h2>다시 확인할 사건</h2>
+<div id="rev"></div>
+<button class="btn" id="again">다시 도전</button>
+</div>
+</section>
+</main>
+<script>
+var Q=[
+{q:"손을 씻을 때 사람들이 가장 자주 놓치는 부위는?",o:["손바닥 한가운데","엄지손가락, 손톱 밑, 손가락 끝","손등 전체","손목 위쪽 팔뚝"],a:1,e:"손 씻기 연구에서 엄지손가락, 손가락 끝, 손톱 밑, 손가락 사이가 특히 잘 남는 곳으로 꼽힙니다. 비누로 30초 이상, 이 부위를 의식해서 문질러 주세요.",t:"엄지는 반대 손으로 감싸 돌리고, 손끝은 반대 손바닥에 비비세요."},
+{q:"하루에도 수십 번 만지는 스마트폰, 위생을 지키는 가장 알맞은 방법은?",o:["물에 담가 세제로 씻는다","제조사 안내를 확인하고 알코올 티슈로 가볍게 닦는다","한 번도 닦지 않아도 괜찮다","락스를 뿌려 닦는다"],a:1,e:"스마트폰 화면에는 손에서 옮겨 온 병원체가 남을 수 있습니다. 전원을 끄고 제조사가 허용한 방법(보통 알코올 계열 티슈)으로 가볍게 닦되, 물에 담그거나 락스는 기기를 망가뜨립니다.",t:"화장실에서 폰을 쓰면 오염 위험이 커져요. 쓰고 나서 손위생도 꼭."},
+{q:"바닥에 떨어진 과자를 5초 안에 주우면 안전하다는 '5초 룰'은?",o:["맞다. 5초 안에는 균이 옮겨 가지 않는다","수분이 많은 음식은 안전하고 마른 음식만 위험하다","근거가 약하다. 닿는 즉시 균이 옮겨 갈 수 있다","카펫 위에서만 안전하다"],a:2,e:"연구에서 세균은 음식이 바닥에 닿는 즉시 옮겨 갔고, 시간이 길수록 더 많이 묻는 경향이 있었습니다. 수분이 많은 음식은 더 빨리 오염되는 편이에요. 5초 룰은 안전을 보장하지 않습니다.",t:"의심스러우면 먹지 않는 것이 가장 안전해요."},
+{q:"조리한 음식을 실온에 두어도 비교적 안전한 시간은 최대 약 얼마일까요?",o:["30분","약 2시간","6시간","하루"],a:1,e:"조리한 음식은 실온에 2시간 넘게 두지 않는 것이 원칙이고, 더운 여름(약 32℃ 이상)에는 1시간 안에 냉장하세요. 세균은 따뜻한 온도에서 빠르게 증식합니다. 식으면 냉장고에 바로 넣어도 괜찮아요.",t:"남은 음식은 얕은 용기에 나눠 담으면 더 빨리 식어요."},
+{q:"햄버거 패티처럼 간 고기는 스테이크보다 왜 속까지 더 꼭 익혀야 할까요?",o:["고기 색이 달라서","갈면서 겉에 있던 균이 속까지 섞이기 때문에","간 고기는 소금이 많아서","원래 더 두꺼워서"],a:1,e:"통고기는 균이 주로 겉면에 있어 겉을 익히면 대부분 처리되지만, 간 고기는 갈리는 과정에서 균이 속까지 퍼집니다. 중심까지 충분히 익혀야 하며, 식약처는 중심 온도 75℃ 이상에서 1분 이상을 권장합니다.",t:"고기 색만으로 판단하지 말고 가능하면 조리용 온도계를 쓰세요."},
+{q:"변기 뚜껑이 있다면 물을 내릴 때 어떻게 하는 것이 좋을까요?",o:["뚜껑을 닫고 내린다","뚜껑을 열고 내린다","상관없다","물을 내리지 않는다"],a:0,e:"물을 내릴 때 변기 속 물방울(에어로졸)이 튀어 올라 주변으로 퍼질 수 있습니다. 뚜껑을 닫으면 칫솔, 수건, 세면대로 번지는 오염을 줄일 수 있어요.",t:"칫솔은 변기에서 멀리, 세워서 말려 보관하세요."},
+{q:"우리 집 주방에서 세균이 가장 많기로 손꼽히는 곳은?",o:["냉장고 손잡이","젖어 있는 주방 스펀지와 행주","전자레인지 버튼","가스레인지 불꽃"],a:1,e:"음식물 찌꺼기와 습기가 많은 스펀지, 행주는 세균이 증식하기 좋은 환경입니다. 사용 후 짜서 완전히 말리고, 자주 삶거나 새것으로 교체하세요.",t:"생고기를 닦은 행주는 다른 곳에 쓰지 말고 따로 세탁하세요."},
+{q:"감기로 병원에 갔을 때, 의사가 항생제를 처방하지 않는 흔한 이유는?",o:["처방이 귀찮아서","감기는 대부분 바이러스 때문이라 항생제가 듣지 않아서","항생제는 어른에게 쓰면 안 돼서","감기는 낫지 않는 병이라서"],a:1,e:"항생제는 세균에 쓰는 약이며 바이러스에는 효과가 없습니다. 불필요하게 쓰면 부작용과 항생제 내성균만 늘어나요. 세균 감염이 의심될 때만 처방받아 정해진 기간대로 복용하세요.",t:"남은 항생제를 보관했다가 임의로 먹지 마세요."},
+{q:"독감에 걸린 뒤 학교나 직장으로 돌아가는 시점으로 가장 알맞은 것은?",o:["열이 조금 내려가면 바로","해열제로 열을 내린 즉시","해열제 없이 열이 내린 뒤 약 24시간이 지나고 증상이 호전되었을 때","기침이 완전히 멈출 때까지 한 달"],a:2,e:"해열제를 먹어서 일시적으로 열이 내린 상태에서는 아직 바이러스를 퍼뜨릴 수 있습니다. 해열제 없이 열이 내린 뒤 24시간 이상 지나고 증상이 좋아질 때 복귀하는 것이 일반적인 권고입니다. 학교 감염병은 별도 등교 중지 기준이 있으니 확인하세요.",t:"복귀 후에도 기침이 남으면 마스크와 기침 예절을 지키세요."},
+{q:"녹슨 못에 찔리면 파상풍에 걸리는 진짜 이유는?",o:["녹 자체가 병균이라서","흙, 먼지, 분변에 있는 파상풍균이 상처 속으로 들어가서","못이 차가워서","상처가 작아서 공기가 안 통해서"],a:1,e:"파상풍은 녹이 아니라 흙이나 먼지 속에 사는 파상풍균이 깊은 상처에 들어가 증식하며 독소를 내서 생깁니다. 녹슨 물건은 지저분하고 상처를 깊게 내서 위험 신호일 뿐이에요. 성인도 10년마다 추가 접종이 권장됩니다.",t:"흙 묻은 상처는 흐르는 물로 충분히 씻고, 깊으면 병원에서 접종 여부를 확인하세요."},
+{q:"독감 예방접종은 언제 맞는 것이 가장 효과적일까요?",o:["독감에 걸린 직후","유행하기 전인 가을(대개 10~11월경)에 맞는다","한 번 맞으면 평생 유지된다","접종 직후 바로 완전한 효과가 난다"],a:1,e:"독감 백신은 접종 후 항체가 충분히 생기기까지 약 2주가 걸리고, 바이러스가 해마다 바뀌어 매년 접종이 권장됩니다. 유행하기 전에 맞아야 하며, 감염을 100% 막지는 못해도 중증과 합병증 위험을 줄여 줍니다.",t:"국가예방접종 대상(어린이, 노인, 임신부 등)은 일정이 정해져 있으니 확인하세요."},
+{q:"생닭을 요리할 때 식중독을 줄이는 방법으로 알맞은 것은?",o:["흐르는 물에 박박 씻는다","씻지 않고 조리하되, 만진 손과 도구는 비누로 씻는다","세제로 닭을 씻는다","씻은 물이 튀어도 닦지 않는다"],a:1,e:"생닭을 씻으면 살모넬라, 캄필로박터가 든 물방울이 싱크대와 주변 음식으로 퍼질 수 있습니다. 충분히 익히면 균이 죽으므로 닭을 씻을 필요가 없고, 만진 손과 도마, 칼을 비누로 씻는 것이 중요해요.",t:"생고기용 도마와 채소용 도마를 구분하세요."}
+];
+var N=Q.length,order,idx,pts,streak,okc,miss,lock,left,timer,cur;
+function $(id){return document.getElementById(id)}
+function show(id){["start","play","end"].forEach(function(x){$(x).classList.toggle("hide",x!==id)})}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function begin(){order=shuf(Q.map(function(_,i){return i}));idx=0;pts=0;streak=0;okc=0;miss=[];show("play");load()}
+function load(){
+ lock=false;
+ var s=Q[order[idx]],ops=shuf(s.o.map(function(t,k){return{t:t,r:k===s.a}}));
+ cur={s:s,ops:ops};
+ $("no").textContent="사건 "+(idx+1)+"/"+N;
+ $("cs").textContent="사건 파일 No."+(idx+1);
+ $("pg").style.width=(idx/N*100)+"%";
+ $("q").textContent=s.q;
+ $("exp").classList.add("hide");$("next").classList.add("hide");
+ upd();
+ var h=$("opts");h.innerHTML="";
+ ops.forEach(function(o,k){var b=document.createElement("button");b.className="opt";b.textContent=(k+1)+". "+o.t;b.onclick=function(){pick(k)};h.appendChild(b)});
+ left=20;tick();clearInterval(timer);timer=setInterval(function(){left-=0.1;if(left<=0){left=0;tick();pick(-1)}else tick()},100);
+}
+function tick(){$("tm").style.width=(left/20*100)+"%"}
+function upd(){$("sc").textContent="⭐ "+pts+"점";var c=$("cb");if(streak>=2){c.textContent="🔥 "+streak+"콤보";c.classList.remove("hide")}else c.classList.add("hide")}
+function pick(k){
+ if(lock)return;lock=true;clearInterval(timer);
+ var bs=$("opts").children,right=k>=0&&cur.ops[k].r,gain=0;
+ for(var j=0;j<bs.length;j++){bs[j].disabled=true;if(cur.ops[j].r)bs[j].classList.add("ok")}
+ if(right){okc++;streak++;gain=100+Math.ceil(left)*5+Math.min(streak-1,5)*20;pts+=gain}
+ else{streak=0;miss.push(cur.s);if(k>=0)bs[k].classList.add("no")}
+ upd();
+ var e=$("exp");e.className="exp "+(right?"good":"bad")+" pop";e.innerHTML="";
+ var r=document.createElement("b");r.className="r";
+ r.textContent=right?"✅ 정답! +"+gain+"점":(k<0?"⏰ 시간 초과!":"❌ 아쉬워요.");
+ var p=document.createElement("div");p.textContent=cur.s.e;
+ var t=document.createElement("div");t.className="tip";t.textContent="🕵️ 오늘부터 실천: "+cur.s.t;
+ e.appendChild(r);e.appendChild(p);e.appendChild(t);
+ $("next").textContent=idx===N-1?"결과 보기":"다음 사건";
+ $("next").classList.remove("hide");$("next").focus();
+}
+$("next").onclick=function(){idx++;if(idx>=N)finish();else load()};
+function finish(){
+ show("end");$("pg").style.width="100%";
+ $("fs").textContent=pts+"점";
+ var r=okc>=11?"🏅 수석 마스터 탐정":okc>=9?"🥈 베테랑 탐정":okc>=6?"🥉 수습 탐정":"🔎 신입 탐정";
+ $("rank").textContent=r;
+ $("sum").textContent=N+"문제 중 "+okc+"문제 정답입니다.";
+ var h=$("rev");h.innerHTML="";
+ if(!miss.length){h.textContent="모든 사건을 해결했어요! 🎉"}
+ miss.forEach(function(s){
+  var d=document.createElement("div");d.className="rev";
+  var a=document.createElement("b");a.textContent=s.q;
+  var b=document.createElement("div");b.textContent="정답: "+s.o[s.a];
+  b.style.color="var(--ok)";
+  d.appendChild(a);d.appendChild(b);h.appendChild(d);
+ });
+}
+$("go").onclick=begin;$("again").onclick=begin;
+</script>
+</body>
+</html>
